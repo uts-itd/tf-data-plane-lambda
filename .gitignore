@@ -32,7 +32,3 @@ terraform.rc
 # Lambda directories
 builds/
 __pycache__/
-
-# Emacs backup files
-*~
-.*~
