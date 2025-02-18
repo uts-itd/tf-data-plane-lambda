@@ -2,11 +2,9 @@ provider "aws" {
   region = "eu-west-1"
 
   # Make it faster by skipping something
-  skip_get_ec2_platforms      = true
   skip_metadata_api_check     = true
   skip_region_validation      = true
   skip_credentials_validation = true
-  skip_requesting_account_id  = true
 }
 
 resource "random_pet" "this" {
@@ -18,10 +16,10 @@ module "lambda_function" {
 
   function_name = "${random_pet.this.id}-lambda-async"
   handler       = "index.lambda_handler"
-  runtime       = "python3.8"
+  runtime       = "python3.12"
   architectures = ["arm64"]
 
-  source_path = "${path.module}/../fixtures/python3.8-app1"
+  source_path = "${path.module}/../fixtures/python-app1"
 
   create_async_event_config = true
   attach_async_event_policy = true

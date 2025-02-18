@@ -4,6 +4,11 @@ output "lambda_function_arn" {
   value       = try(aws_lambda_function.this[0].arn, "")
 }
 
+output "lambda_function_arn_static" {
+  description = "The static ARN of the Lambda Function. Use this to avoid cycle errors between resources (e.g., Step Functions)"
+  value       = local.create && var.create_function && !var.create_layer ? "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.function_name}" : ""
+}
+
 output "lambda_function_invoke_arn" {
   description = "The Invoke ARN of the Lambda Function"
   value       = try(aws_lambda_function.this[0].invoke_arn, "")
@@ -17,6 +22,11 @@ output "lambda_function_name" {
 output "lambda_function_qualified_arn" {
   description = "The ARN identifying your Lambda Function Version"
   value       = try(aws_lambda_function.this[0].qualified_arn, "")
+}
+
+output "lambda_function_qualified_invoke_arn" {
+  description = "The Invoke ARN identifying your Lambda Function Version"
+  value       = try(aws_lambda_function.this[0].qualified_invoke_arn, "")
 }
 
 output "lambda_function_version" {
@@ -42,6 +52,16 @@ output "lambda_function_source_code_hash" {
 output "lambda_function_source_code_size" {
   description = "The size in bytes of the function .zip file"
   value       = try(aws_lambda_function.this[0].source_code_size, "")
+}
+
+output "lambda_function_signing_job_arn" {
+  description = "ARN of the signing job"
+  value       = try(aws_lambda_function.this[0].signing_job_arn, "")
+}
+
+output "lambda_function_signing_profile_version_arn" {
+  description = "ARN of the signing profile version"
+  value       = try(aws_lambda_function.this[0].signing_profile_version_arn, "")
 }
 
 # Lambda Function URL
@@ -82,6 +102,11 @@ output "lambda_layer_version" {
 }
 
 # Lambda Event Source Mapping
+output "lambda_event_source_mapping_arn" {
+  description = "The event source mapping ARN"
+  value       = { for k, v in aws_lambda_event_source_mapping.this : k => v.arn }
+}
+
 output "lambda_event_source_mapping_function_arn" {
   description = "The the ARN of the Lambda function the event source mapping is sending events to"
   value       = { for k, v in aws_lambda_event_source_mapping.this : k => v.function_arn }
@@ -133,6 +158,10 @@ output "lambda_cloudwatch_log_group_name" {
 output "local_filename" {
   description = "The filename of zip archive deployed (if deployment was from local)"
   value       = local.filename
+
+  depends_on = [
+    null_resource.archive,
+  ]
 }
 
 output "s3_object" {

@@ -4,15 +4,24 @@ data "aws_caller_identity" "this" {}
 
 data "aws_ecr_authorization_token" "token" {}
 
+locals {
+  source_path   = "context"
+  path_include  = ["**"]
+  path_exclude  = ["**/__pycache__/**"]
+  files_include = setunion([for f in local.path_include : fileset(local.source_path, f)]...)
+  files_exclude = setunion([for f in local.path_exclude : fileset(local.source_path, f)]...)
+  files         = sort(setsubtract(local.files_include, local.files_exclude))
+
+  dir_sha = sha1(join("", [for f in local.files : filesha1("${local.source_path}/${f}")]))
+}
+
 provider "aws" {
   region = "eu-west-1"
 
   # Make it faster by skipping something
-  skip_get_ec2_platforms      = true
   skip_metadata_api_check     = true
   skip_region_validation      = true
   skip_credentials_validation = true
-  skip_requesting_account_id  = true
 }
 
 provider "docker" {
@@ -23,22 +32,41 @@ provider "docker" {
   }
 }
 
-module "lambda_function_from_container_image" {
+module "lambda_function_with_docker_build" {
   source = "../../"
 
-  function_name = "${random_pet.this.id}-lambda-from-container-image"
-  description   = "My awesome lambda function from container image"
+  function_name = "${random_pet.this.id}-lambda-with-docker-build"
+  description   = "My awesome lambda function with container image by modules/docker-build"
 
   create_package = false
 
   ##################
   # Container Image
   ##################
-  image_uri    = module.docker_image.image_uri
-  package_type = "Image"
+  package_type  = "Image"
+  architectures = ["arm64"] # ["x86_64"]
+
+  image_uri = module.docker_build.image_uri
 }
 
-module "docker_image" {
+module "lambda_function_with_docker_build_from_ecr" {
+  source = "../../"
+
+  function_name = "${random_pet.this.id}-lambda-with-docker-build-from-ecr"
+  description   = "My awesome lambda function with container image by modules/docker-build and ECR repository created by terraform-aws-ecr module"
+
+  create_package = false
+
+  ##################
+  # Container Image
+  ##################
+  package_type  = "Image"
+  architectures = ["arm64"] # ["x86_64"]
+
+  image_uri = module.docker_build_from_ecr.image_uri
+}
+
+module "docker_build" {
   source = "../../modules/docker-build"
 
   create_ecr_repo = true
@@ -60,11 +88,58 @@ module "docker_image" {
     ]
   })
 
-  image_tag   = "2.0"
-  source_path = "context"
+  use_image_tag = false # If false, sha of the image will be used
+
+  # use_image_tag = true
+  # image_tag   = "2.0"
+
+  source_path = local.source_path
+  platform    = "linux/amd64"
   build_args = {
     FOO = "bar"
   }
+
+  triggers = {
+    dir_sha = local.dir_sha
+  }
+}
+
+############################################
+# Docker Image and ECR by terraform-aws-ecr
+############################################
+
+module "docker_build_from_ecr" {
+  source = "../../modules/docker-build"
+
+  ecr_repo = module.ecr.repository_name
+
+  use_image_tag = false # If false, sha of the image will be used
+
+  # use_image_tag = true
+  # image_tag   = "2.0"
+
+  source_path = local.source_path
+  platform    = "linux/amd64"
+  build_args = {
+    FOO = "bar"
+  }
+
+  triggers = {
+    dir_sha = local.dir_sha
+  }
+
+  cache_from = ["${module.ecr.repository_url}:latest"]
+}
+
+module "ecr" {
+  source = "terraform-aws-modules/ecr/aws"
+
+  repository_name         = "${random_pet.this.id}-ecr"
+  repository_force_delete = true
+
+  create_lifecycle_policy = false
+
+  repository_lambda_read_access_arns = [module.lambda_function_with_docker_build_from_ecr.lambda_function_arn]
 }
 
 resource "random_pet" "this" {

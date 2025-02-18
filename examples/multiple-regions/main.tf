@@ -2,11 +2,9 @@ provider "aws" {
   region = "eu-west-1"
 
   # Make it faster by skipping something
-  skip_get_ec2_platforms      = true
   skip_metadata_api_check     = true
   skip_region_validation      = true
   skip_credentials_validation = true
-  skip_requesting_account_id  = true
 }
 
 provider "aws" {
@@ -14,11 +12,9 @@ provider "aws" {
   alias  = "us-east-1"
 
   # Make it faster by skipping something
-  skip_get_ec2_platforms      = true
   skip_metadata_api_check     = true
   skip_region_validation      = true
   skip_credentials_validation = true
-  skip_requesting_account_id  = true
 }
 
 ################################
@@ -31,10 +27,10 @@ module "lambda_function" {
   function_name = "${random_pet.this.id}-lambda1"
   description   = "My awesome lambda function"
   handler       = "index.lambda_handler"
-  runtime       = "python3.8"
+  runtime       = "python3.12"
   publish       = true
 
-  source_path = "${path.module}/../fixtures/python3.8-app1"
+  source_path = "${path.module}/../fixtures/python-app1"
 
   attach_dead_letter_policy = true
   dead_letter_target_arn    = aws_sqs_queue.dlq.arn
@@ -128,10 +124,10 @@ module "lambda_function_another_region" {
   function_name = "${random_pet.this.id}-lambda1"
   description   = "Copy of my awesome lambda function"
   handler       = "index.lambda_handler"
-  runtime       = "python3.8"
+  runtime       = "python3.12"
   publish       = true
 
-  source_path = "${path.module}/../fixtures/python3.8-app1"
+  source_path = "${path.module}/../fixtures/python-app1"
 
   attach_dead_letter_policy = true
   dead_letter_target_arn    = aws_sqs_queue.dlq_us_east_1.arn

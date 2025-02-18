@@ -4,6 +4,11 @@ output "lambda_function_arn" {
   value       = module.lambda_function.lambda_function_arn
 }
 
+output "lambda_function_arn_static" {
+  description = "The static ARN of the Lambda Function. Use this to avoid cycle errors between resources (e.g., Step Functions)"
+  value       = module.lambda_function.lambda_function_arn_static
+}
+
 output "lambda_function_invoke_arn" {
   description = "The Invoke ARN of the Lambda Function"
   value       = module.lambda_function.lambda_function_invoke_arn
@@ -63,4 +68,9 @@ output "lambda_event_source_mapping_state_transition_reason" {
 output "lambda_event_source_mapping_uuid" {
   description = "The UUID of the created event source mapping"
   value       = module.lambda_function.lambda_event_source_mapping_uuid
+}
+
+output "lambda_event_source_mapping_arn" {
+  description = "The event source mapping ARN"
+  value       = module.lambda_function.lambda_event_source_mapping_arn
 }
