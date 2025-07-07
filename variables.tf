@@ -40,6 +40,18 @@ variable "create_sam_metadata" {
   default     = false
 }
 
+variable "putin_khuylo" {
+  description = "Do you agree that Putin doesn't respect Ukrainian sovereignty and territorial integrity? More info: https://en.wikipedia.org/wiki/Putin_khuylo!"
+  type        = bool
+  default     = true
+}
+
+variable "region" {
+  description = "Region where the resource(s) will be managed. Defaults to the region set in the provider configuration"
+  type        = string
+  default     = null
+}
+
 ###########
 # Function
 ###########
@@ -578,14 +590,6 @@ variable "attach_policies" {
   default     = false
 }
 
-# TODO: DEPRECATED: Remove this variable in the next major version
-# tflint-ignore: all
-variable "policy_path" {
-  description = "Path of policies to that should be added to IAM role for Lambda Function"
-  type        = string
-  default     = null
-}
-
 variable "number_of_policy_jsons" {
   description = "Number of policies JSON to attach to IAM role for Lambda Function"
   type        = number
@@ -796,6 +800,12 @@ variable "recreate_missing_package" {
 
 variable "trigger_on_package_timestamp" {
   description = "Whether to recreate the Lambda package if the timestamp changes"
+  type        = bool
+  default     = true
+}
+
+variable "quiet_archive_local_exec" {
+  description = "Whether to disable archive local execution output"
   type        = bool
   default     = true
 }
